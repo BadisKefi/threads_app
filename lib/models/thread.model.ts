@@ -27,7 +27,15 @@ const threadSchema = new mongoose.Schema({
             type: mongoose.Schema.Types.ObjectId,
             ref: "Thread",
         },
-    ]
+    ],
+    likers: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+    ],
+
 });
 
 const Thread = mongoose.models.Thread || mongoose.model("Thread", threadSchema);

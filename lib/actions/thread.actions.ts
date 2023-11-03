@@ -254,5 +254,31 @@ export async function fetchThread(id: string) {
     }  
 }
 
+export async function LikeToggleThread(userId: string, threadId: string, path: string) {
+  try {
+    connectToDB();
+    const thread = await Thread.findById(JSON.parse(threadId));
+    const user = await User.findOne({ id: userId });
+
+    if (!thread || !user) {
+      throw new Error("Thread or user not found");
+    }
+
+    const isLiked = thread.likers.includes(user._id);
+
+    if (isLiked) {
+      thread.likers.pull(user._id);
+    } else {
+      thread.likers.push(user._id);
+    }
+
+    await thread.save();
+    revalidatePath(path);
+  } catch (error: any) {
+    throw new Error(`Error liking thread: ${error.message}`);
+  }
+}
+
+
 
 
