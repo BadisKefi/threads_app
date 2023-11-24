@@ -1,5 +1,6 @@
 import ThreadCard from "@/components/cards/ThreadCard";
 import Comment from "@/components/forms/Comment";
+import { isMember } from "@/lib/actions/community.actions";
 import { fetchThreadById } from "@/lib/actions/thread.actions";
 import { fetchUser } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs";
@@ -18,6 +19,8 @@ const page = async ({ params } : { params : { id: string }}) => {
   if(!(userInfo?.status === 'active')) redirect('/activate-account');
   
   const thread = await fetchThreadById(params.id);
+  const isMemberOfCommunity = await isMember(user.id, thread.community.id);
+  if (!(thread.author.etat === 'unbanned' && thread.author.status === 'active' && (thread.community == null || thread.community !== null && isMemberOfCommunity))) redirect('/'); 
 
   return (
     <section className='relative'>

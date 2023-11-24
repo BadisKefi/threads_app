@@ -5,6 +5,7 @@
 // Resource: https://docs.svix.com/receiving/verifying-payloads/why
 // It's a good practice to verify webhooks. Above article shows why we should do it
 import { Webhook, WebhookRequiredHeaders } from "svix";
+import { WebhookEvent } from '@clerk/nextjs/server'
 import { headers } from "next/headers";
 
 import { IncomingHttpHeaders } from "http";
@@ -28,38 +29,53 @@ type EventType =
   | "organization.updated"
   | "organization.deleted";
 
-type Event = {
-  data: Record<string, string | number | Record<string, string>[]>;
-  object: "event";
-  type: EventType;
-};
+
 
 export const POST = async (request: Request) => {
-  const payload = await request.json();
-  const header = headers();
 
-  const heads = {
-    "svix-id": header.get("svix-id"),
-    "svix-timestamp": header.get("svix-timestamp"),
-    "svix-signature": header.get("svix-signature"),
-  };
+    // You can find this in the Clerk Dashboard -> Webhooks -> choose the webhook
+    const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
+ 
+    if (!WEBHOOK_SECRET) {
+      throw new Error('Please add WEBHOOK_SECRET from Clerk Dashboard to .env or .env.local')
+    }
+   
+    // Get the headers
+    const headerPayload = headers();
+    const svix_id = headerPayload.get("svix-id");
+    const svix_timestamp = headerPayload.get("svix-timestamp");
+    const svix_signature = headerPayload.get("svix-signature");
+   
+    // If there are no headers, error out
+    if (!svix_id || !svix_timestamp || !svix_signature) {
+      return new Response('Error occured -- no svix headers', {
+        status: 400
+      })
+    }
+   
+    // Get the body
+    const payload = await request.json()
+    const body = JSON.stringify(payload);
+   
+    // Create a new Svix instance with your secret.
+    const wh = new Webhook(WEBHOOK_SECRET);
 
-  // Activitate Webhook in the Clerk Dashboard.
-  // After adding the endpoint, you'll see the secret on the right side.
-  const wh = new Webhook(process.env.NEXT_CLERK_WEBHOOK_SECRET || "");
-
-  let evnt: Event | null = null;
+  let evnt: WebhookEvent | null = null;
 
   try {
-    evnt = wh.verify(
-      JSON.stringify(payload),
-      heads as IncomingHttpHeaders & WebhookRequiredHeaders
-    ) as Event;
+    evnt = wh.verify(body, {
+      "svix-id": svix_id,
+      "svix-timestamp": svix_timestamp,
+      "svix-signature": svix_signature,
+    }) as WebhookEvent
   } catch (err) {
-    return NextResponse.json({ message: err }, { status: 400 });
+    console.error('Error verifying webhook:', err);
+    return new Response('Error occured', {
+      status: 400
+    })
   }
 
-  const eventType: EventType = evnt?.type!;
+  const eventType = evnt.type;
 
   // Listen organization creation event
   if (eventType === "organization.created") {
@@ -74,9 +90,8 @@ export const POST = async (request: Request) => {
         // @ts-ignore
         id,
         name,
-        slug,
         logo_url || image_url,
-        "org bio",
+        `${name}`,
         created_by
       );
 
@@ -146,7 +161,7 @@ export const POST = async (request: Request) => {
       console.log("removed", evnt?.data);
 
       // @ts-ignore
-      await removeUserFromCommunity(JSON.parse(JSON.stringify(public_user_data.user_id)), organization.id);
+      await removeUserFromCommunity(public_user_data.user_id, organization.id);
 
 
       return NextResponse.json({ message: "Member removed" }, { status: 201 });

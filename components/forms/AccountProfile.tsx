@@ -31,6 +31,7 @@ type Props = {
         objectId: string,
         username: string,
         name: string,
+        email: string,
         bio: string,
         image: string,
     };
@@ -72,6 +73,7 @@ const AccountProfile = ({ user, btnTitle } : Props) => {
           name: values.name,
           path: pathname,
           username: values.username,
+          email: user.email,
           userId: user.id,
           bio: values.bio,
           image: values.profile_photo,

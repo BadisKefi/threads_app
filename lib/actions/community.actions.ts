@@ -1,12 +1,13 @@
 "use server";
 
 import { FilterQuery, SortOrder, model } from "mongoose";
-
 import Community from "../models/community.model";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
 
 import { connectToDB } from "../mongoose";
+import axios from "axios";
+import { any } from "zod";
 
 export async function createCommunity(
   id: string,
@@ -20,7 +21,7 @@ export async function createCommunity(
     connectToDB();
 
     // Find the user with the provided unique id
-    const user = await User.findOne({ id: createdById });
+    const user = await User.findOne({ id: createdById }).exec();
 
     if (!user) {
       throw new Error("User not found"); // Handle the case if the user with the id is not found
@@ -38,8 +39,11 @@ export async function createCommunity(
     const createdCommunity = await newCommunity.save();
 
     // Update User model
-    user.communities.push(createdCommunity._id);
-    await user.save();
+    await User.updateOne(
+      { _id: user._id },
+      { $push: { communities: createdCommunity._id } }
+    );
+
 
     return createdCommunity;
   } catch (error) {
@@ -210,34 +214,31 @@ export async function removeUserFromCommunity(
 ) {
   connectToDB();
   try {
-    const userIdObject = await User.findOne({ id: userId }, { _id: 1 });
-    const communityIdObject = await Community.findOne(
-      { id: communityId },
-      { _id: 1 }
-    );
+    const userObject = await User.findOne({ id: userId }).exec();
+    const communityObject = await Community.findOne({ id: communityId }).exec();
 
-    if (!userIdObject) {
+    if (!userObject) {
       throw new Error("User not found");
     }
 
-    if (!communityIdObject) {
+    if (!communityObject) {
       throw new Error("Community not found");
     }       
-    console.log("User : ", userIdObject, "Community : ", communityIdObject);
+    console.log("User : ", userObject._id, "Community : ", communityObject._id);
 
     // Delete all threads created by the user in the community
-    await Thread.deleteMany({ community: communityIdObject._id, author: userIdObject._id });
+    await Thread.deleteMany({ community: communityObject._id, author: userObject._id });
 
     // Remove the user's _id from the members array in the community
     await Community.updateOne(
-      { _id: communityIdObject._id },
-      { $pull: { members: userIdObject._id } }
+      { _id: communityObject._id },
+      { $pull: { members: userObject._id } }
     );
 
     // Remove the community's _id from the communities array in the user
     await User.updateOne(
-      { _id: userIdObject._id },
-      { $pull: { communities: communityIdObject._id } }
+      { _id: userObject._id },
+      { $pull: { communities: communityObject._id } }
     );
 
     return { success: true };
@@ -278,33 +279,82 @@ export async function updateCommunityInfo(
 export async function deleteCommunity(communityId: string) {
   try {
     connectToDB();
-
-    // Find the community by its ID and delete it
-    const deletedCommunity = await Community.findOneAndDelete({
-      id: communityId,
-    });
-
-    if (!deletedCommunity) {
+    // Find the community by its ID
+    const communityObject = await Community.findOne({ id: communityId }).exec();
+    if (!communityObject) {
       throw new Error("Community not found");
     }
-
     // Delete all threads associated with the community
-    await Thread.deleteMany({ community: communityId });
+     await Thread.deleteMany({ community: communityObject._id });
 
     // Find all users who are part of the community
-    const communityUsers = await User.find({ communities: communityId });
+    const communityUsers = await User.find({ communities: communityObject._id });
 
     // Remove the community from the 'communities' array for each user
-    const updateUserPromises = communityUsers.map((user) => {
-      user.communities.pull(communityId);
-      return user.save();
+    const updateUserPromises = communityUsers.map(async (user) => {
+      user.communities.pull(communityObject._id);
+      return await user.save();
     });
 
     await Promise.all(updateUserPromises);
 
-    return deletedCommunity;
+  // Delete the community
+  await communityObject.deleteOne();
+
+    return communityObject;
   } catch (error) {
     console.error("Error deleting community: ", error);
     throw error;
   }
 }
+
+export async function getCommunitiesCount () {
+  try {
+    connectToDB();
+    return await Community.countDocuments();
+  } catch (error) {
+    console.error("Error getting communities count: ", error);
+    throw error;
+  }
+}
+
+export async function isMember(userId: string, communityId: string){
+  try {
+    connectToDB();
+    const response = await axios.get(`https://api.clerk.com/v1/organizations/${communityId}/memberships`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+    });
+    const members = response.data.data;
+    const userIds = members.map((member:any) => member.public_user_data.user_id);
+    const isMember = userIds.includes(userId);
+    return isMember;
+  } catch (error: any) {
+    console.error("Error checking if user is member of community: ", error);
+    throw error;
+  }
+}
+
+export async function isCommunityAdmin(userId: string, communityId: string){
+  try {
+    connectToDB();
+    const response = await axios.get(`https://api.clerk.com/v1/organizations/${communityId}/memberships`, {
+      headers: {
+        Authorization: `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': 'application/json'
+      },
+    });
+    const members = response.data.data;
+    const userRoles = members.map((member:any) => ({userId: member.public_user_data.user_id, role: member.role}));
+    const userRole = userRoles.find((userRole:any) => userRole.userId === userId);
+    const isAdmin = userRole?.role === "admin";
+    console.log("isAdmin : ", isAdmin);
+    return isAdmin;
+  } catch (error: any) {
+    console.error("Error checking if user is admin of community: ", error);
+    throw error;
+  }
+}
+

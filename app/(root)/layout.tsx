@@ -1,5 +1,5 @@
 import { ThemeProvider } from "@/components/theme-provider"
-import { ClerkProvider } from '@clerk/nextjs'
+import { ClerkProvider, currentUser } from '@clerk/nextjs'
 import { Providers } from "@/providers/providers";
 import '../globals.css'
 import type { Metadata } from 'next'
@@ -9,6 +9,7 @@ import LeftSideBar from '@/components/shared/LeftSideBar'
 import RightSideBar from '@/components/shared/RightSideBar'
 import BottomBar from '@/components/shared/BottomBar'
 import { Component } from "lucide-react"
+import { fetchUser } from "@/lib/actions/user.actions";
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -17,7 +18,10 @@ export const metadata = {
   description: 'A Next.js 13 Threads Application',
 }
 
-export default function RootLayout({ children, } : { children: React.ReactNode }) {
+export default async function RootLayout({ children, } : { children: React.ReactNode }) {
+  const user = await currentUser();
+  if (!user) return null;
+  const userInfo = await fetchUser(user.id);
   return (
     <ClerkProvider>
       <html lang="en">
@@ -25,7 +29,7 @@ export default function RootLayout({ children, } : { children: React.ReactNode }
       <Providers>
           <TopBar />
           <main className='flex flex-row'>
-            <LeftSideBar />
+            <LeftSideBar role={userInfo.role}/>
             <section className='main-container'>
               <div className='w-full max-w-4xl'>{children}</div>
             </section>

@@ -12,13 +12,19 @@ import { fetchUser } from "@/lib/actions/user.actions";
 
 async function Page({ params }: { params: { id: string } }) {
   const user = await currentUser();
+  const userInfo = await fetchUser(params.id);
+
   if (!user) return null;
   const loggedInUser = await fetchUser(user.id);
   
   if (!loggedInUser?.onboarded) redirect("/onboarding");
   if(!(loggedInUser?.status === 'active')) redirect('/activate-account');
 
-  const userInfo = await fetchUser(params.id);
+  if (!userInfo) return null;
+  if (!(userInfo.status === 'active') || (userInfo.etat === 'banned' && loggedInUser.role !== 'admin')) {
+    redirect('/');
+  }
+  
 
   return (
     <section>

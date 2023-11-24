@@ -1,6 +1,6 @@
-import { Axios } from './../../node_modules/axios/index.d';
 "use server";
 
+import { Axios } from './../../node_modules/axios/index.d';
 import { FilterQuery, SortOrder } from "mongoose";
 import { revalidatePath } from "next/cache";
 
@@ -20,6 +20,7 @@ interface Params {
   userId: string;
   username: string;
   name: string;
+  email: string;
   bio: string;
   image: string;
   path: string;
@@ -41,6 +42,7 @@ export async function updateUser({
   userId,
   bio,
   name,
+  email,
   path,
   username,
   image,
@@ -52,6 +54,7 @@ export async function updateUser({
       {
         username: username.toLowerCase(),
         name,
+        email,
         bio,
         image,
         onboarded: true,
@@ -191,7 +194,7 @@ export async function banUser(userId: string, path: string){
     if(!user){
       throw new Error(`User not found`);
     }
-    const response  = axios.post(`https://api.clerk.com/v1/users/${userId}/ban`, {}, {
+    const response  = await axios.post(`https://api.clerk.com/v1/users/${userId}/ban`, {}, {
       headers: {
         'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
         'Content-Type': "application/json",
@@ -212,7 +215,7 @@ export async function unbanUser(userId: string, path: string){
     if(!user){
       throw new Error(`User not found`);
     }
-    const response  = axios.post(`https://api.clerk.com/v1/users/${userId}/unban`, {}, {
+    const response  = await axios.post(`https://api.clerk.com/v1/users/${userId}/unban`, {}, {
       headers: {
         'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
         'Content-Type': "application/json",
@@ -233,7 +236,7 @@ export async function deleteAccount(userId: string){
     if(!user){
       throw new Error(`User not found`);
     }
-    const response  = axios.delete(`https://api.clerk.com/v1/users/${userId}`, {
+    const response  = await axios.delete(`https://api.clerk.com/v1/users/${userId}`, {
       headers: {
         'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
         'Content-Type': "application/json",
@@ -270,3 +273,116 @@ export async function deasctivateAccount(userId: string) {
     throw new Error(`Failed to deactivate user: ${error.message}`);
   }
 }
+
+export async function getUsersCountByMonth(month: number) {
+  try {
+    await connectToDB();
+
+    // Validate the month parameter
+    if (isNaN(month) || month < 1 || month > 12) {
+      throw new Error('Invalid month parameter');
+    }
+
+    // Calculate the start and end dates for the specified month
+    const startOfMonth = new Date(Date.UTC(new Date().getFullYear(), month - 1, 1, 0, 0, 0, 0));
+    const endOfMonth = new Date(Date.UTC(new Date().getFullYear(), month, 1, 0, 0, 0, 0));
+
+    // Count the number of users created in the specified month
+    const userCount = await User.countDocuments({
+      createdAt: {
+        $gte: startOfMonth,
+        $lt: endOfMonth,
+      },
+    });
+
+    return userCount;
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching user count by month:', error);
+    throw error;
+  }
+}
+
+export async function getBannedUsersCount() {
+  try {
+    await connectToDB();
+
+    // Count the number of users created in the specified month
+    const userCount = await User.countDocuments({
+      etat: "banned",
+    });
+
+    return userCount;
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching user count by month:', error);
+    throw error;
+  }
+}
+
+export async function getDesactivatedUsersCount() {
+  try {
+    await connectToDB();
+
+    // Count the number of users created in the specified month
+    const userCount = await User.countDocuments({
+      status: "inactive",
+    });
+
+    return userCount;
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching user count by month:', error);
+    throw error;
+  }
+}
+
+export async function getUsersCount () {
+  try {
+    await connectToDB();
+
+    // Count the number of users created in the specified month
+    const userCount = await User.countDocuments();
+
+    return userCount;
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching user count by month:', error);
+    throw error;
+  }
+}
+
+export async function getUserEmail(userId: string) {
+  try {
+    const user = await axios.get(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': "application/json",
+      }
+    });
+    const email = await axios.get(`https://api.clerk.com/v1/email_addresses/${user.data.primary_email_address_id}`, {
+      headers: {
+        'Authorization': `Bearer ${process.env.CLERK_SECRET_KEY}`,
+        'Content-Type': "application/json",
+      }
+    });
+    return email.data;
+  } catch (error: any) {
+    throw new Error(`Failed to fetch user email: ${error.message}`);
+  }
+}
+
+export async function getBannedUsers () {
+  try {
+    await connectToDB();
+
+    const users = await User.find({etat: "banned"});
+
+    return users;
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching user count by month:', error);
+    throw error;
+  }
+}
+

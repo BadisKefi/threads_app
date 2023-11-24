@@ -29,6 +29,11 @@ export const sidebarLinks = [
       route: "/profile",
       label: "Profile",
     },
+        {
+      imgURL: "/assets/dashboard.png",
+      route: "/dashboard",
+      label: "Dashboard",
+    },
   ];
   
   export const profileTabs = [

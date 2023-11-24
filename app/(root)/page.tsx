@@ -1,4 +1,5 @@
 import ThreadCard from "@/components/cards/ThreadCard";
+import { isMember } from "@/lib/actions/community.actions";
 import { fetchThreads } from "@/lib/actions/thread.actions";
 import { fetchUser } from "@/lib/actions/user.actions";
 import Thread from "@/lib/models/thread.model";
@@ -28,19 +29,21 @@ export default async function Home() {
           <p className="no-result"> No threads found</p>
           ) : (
             <>
-            {result.threads.map((thread) => (
-              <ThreadCard 
+          {result.threads.map(async (thread) => 
+            thread.author.etat === 'unbanned' && thread.author.status === 'active' && (thread.community == null || await isMember(user.id, thread.community.id)) &&(
+              <ThreadCard
                 key={thread._id}
                 id={thread._id}
-                currentUserId={user?.id}
+                currentUserId={user.id}
                 parentId={thread.parentId}
                 content={thread.text}
                 author={thread.author}
                 community={thread.community}
                 createdAt={thread.createdAt}
                 comments={thread.children}
-               />
-            ))}
+              />
+              )
+            )}
             </>
           )
         }

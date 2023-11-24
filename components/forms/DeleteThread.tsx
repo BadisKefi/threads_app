@@ -22,6 +22,7 @@ import {
 
 interface Props {
   threadId: string;
+  isCommunityAdmin : boolean;
   currentUserId: string;
   currentUserRole: string;
   authorId: string;
@@ -31,6 +32,7 @@ interface Props {
 
 function DeleteThread({
   threadId,
+  isCommunityAdmin,
   currentUserId,
   currentUserRole,
   authorId,
@@ -40,7 +42,7 @@ function DeleteThread({
   const pathname = usePathname();
   const router = useRouter();
 
-  if ((currentUserId !== authorId && currentUserRole !== 'admin') || pathname === "/") return null;
+  if ((currentUserId !== authorId && currentUserRole !== 'admin' && (!(isCommunityAdmin))) || pathname === "/") return null;
 
   return (
     <AlertDialog>

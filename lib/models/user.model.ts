@@ -14,14 +14,16 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  email:{
+    type: String,
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
   image: String,
   bio: String,
-  threads: [
-    {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Thread",
-    },
-  ],
   onboarded: {
     type: Boolean,
     default: false,
@@ -41,6 +43,12 @@ const userSchema = new mongoose.Schema({
     enum: ["user", "admin"],
     default: "user",
   },
+  threads: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Thread",
+    },
+  ],
   communities: [
     {
       type: mongoose.Schema.Types.ObjectId,

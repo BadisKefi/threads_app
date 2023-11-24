@@ -23,6 +23,7 @@ import {
 import  Share  from "@/components/forms/Share" 
 import { fetchUser } from "@/lib/actions/user.actions";
 import Like from "../forms/Like";
+import { isCommunityAdmin } from "@/lib/actions/community.actions";
 
 
 interface Props {
@@ -61,6 +62,10 @@ async function ThreadCard({
   isComment,
 }: Props) {
   const loggedInUser = await fetchUser(currentUserId);
+  let isCommAdmin = false;
+  if (community){
+  isCommAdmin = await isCommunityAdmin(currentUserId, community.id);
+  }
 
 
   return (
@@ -129,6 +134,7 @@ async function ThreadCard({
         />
         <DeleteThread
           threadId={JSON.stringify(id)}
+          isCommunityAdmin={isCommAdmin}
           currentUserId={currentUserId}
           currentUserRole={loggedInUser.role}
           authorId={author.id}

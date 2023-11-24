@@ -37,7 +37,7 @@ async function Page({
           <p className='no-result'>No Result</p>
         ) : (
           <>
-            {result.users.map((person) => (
+            {result.users.map((person) => person.etat == 'unbanned' && person.status == 'active' && (
               <UserCard
                 key={person.id}
                 id={person.id}

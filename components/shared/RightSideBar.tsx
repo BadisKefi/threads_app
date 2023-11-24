@@ -50,7 +50,7 @@ async function RightSidebar() {
         <div className='mt-7 flex w-[350px] flex-col gap-10'>
           {similarMinds.users.length > 0 ? (
             <>
-              {similarMinds.users.map((person) => (
+              {similarMinds.users.map((person) =>  person.etat == 'unbanned' && person.status == 'active' && (
                 <UserCard
                   key={person.id}
                   id={person.id}

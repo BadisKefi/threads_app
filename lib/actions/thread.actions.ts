@@ -1,5 +1,4 @@
-import { metadata } from './../../app/(root)/layout';
-"use server"
+"use server";
 
 import { revalidatePath } from "next/cache";
 import Thread from "../models/thread.model";
@@ -28,7 +27,7 @@ export async function createThread({ text, author, communityId, path }: Params) 
         const createdThread = await Thread.create({
             text,
             author,
-            community: communityIdObject,
+            community: communityIdObject._id,
         });
 
         //Update user model
@@ -105,7 +104,7 @@ export async function fetchThreadById(id: string) {
     try {
         connectToDB();
         const thread = await Thread.findById(id)
-        .populate({path: 'author', model: 'User', select: "_id id name image"})
+        .populate({path: 'author', model: 'User', select: "_id id name image etat status"})
         .populate({
             path: "community",
             model: Community,

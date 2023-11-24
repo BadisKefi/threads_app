@@ -16,7 +16,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useOrganization } from '@clerk/nextjs';
 import { usePathname, useRouter } from 'next/navigation';
-//import { updateUser } from '@/lib/actions/user.actions'
 import { ThreadValidation } from '@/lib/validations/thread';
 import path from 'path'
 import { create } from 'domain';
