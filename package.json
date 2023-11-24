@@ -63,6 +63,7 @@
     "@types/react-dom": "latest",
     "@types/recharts": "^1.8.27",
     "autoprefixer": "latest",
+    "encoding": "^0.1.13",
     "postcss": "latest",
     "tailwindcss": "latest",
     "typescript": "latest"
