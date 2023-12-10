@@ -29,7 +29,7 @@ export default async function RootLayout({ children, } : { children: React.React
       <Providers>
           <TopBar />
           <main className='flex flex-row'>
-            <LeftSideBar role={userInfo.role}/>
+            <LeftSideBar role={userInfo?.role}/>
             <section className='main-container'>
               <div className='w-full max-w-4xl'>{children}</div>
             </section>

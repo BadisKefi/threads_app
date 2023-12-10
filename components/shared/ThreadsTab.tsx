@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
 
-import { fetchCommunityThreads } from "@/lib/actions/community.actions";
+import { fetchCommunityThreads, isMember } from "@/lib/actions/community.actions";
 import { fetchUserThreads } from "@/lib/actions/user.actions";
 
 import ThreadCard from "../cards/ThreadCard";
+import { currentUser } from "@clerk/nextjs";
 
 interface Result {
   name: string;
@@ -24,6 +25,8 @@ interface Result {
       image: string;
     } | null;
     createdAt: string;
+    etat: string;
+    status: string;
     children: {
       author: {
         image: string;
@@ -39,7 +42,9 @@ interface Props {
 }
 
 async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
-  let result: Result;
+  let result: any;
+  const user = await currentUser();
+  if (!user) return null;
 
   if (accountType === "Community") {
     result = await fetchCommunityThreads(accountId);
@@ -49,7 +54,7 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
 
   return (
     <section className='mt-9 flex flex-col gap-10'>
-      {result.threads.map((thread) => (
+      {result.threads.map(async (thread: any) =>  thread.author.etat === 'unbanned' && thread.author.status === 'active' && (thread.community == null || await isMember(user.id, thread.community.id)) &&(
         <ThreadCard
           key={thread._id}
           id={thread._id}
@@ -73,7 +78,8 @@ async function ThreadsTab({ currentUserId, accountId, accountType }: Props) {
           createdAt={thread.createdAt}
           comments={thread.children}
         />
-      ))}
+       )
+      )}
     </section>
   );
 }
