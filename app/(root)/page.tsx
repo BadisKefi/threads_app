@@ -36,6 +36,7 @@ export default async function Home() {
                 id={thread._id}
                 currentUserId={user.id}
                 parentId={thread.parentId}
+                image={thread.image}
                 content={thread.text}
                 author={thread.author}
                 community={thread.community}

@@ -30,6 +30,7 @@ interface Props {
   id: string;
   currentUserId: string;
   parentId: string | null;
+  image: string,
   content: string;
   author: {
     name: string;
@@ -54,6 +55,7 @@ async function ThreadCard({
   id,
   currentUserId,
   parentId,
+  image,
   content,
   author,
   community,
@@ -66,7 +68,7 @@ async function ThreadCard({
   if (community){
   isCommAdmin = await isCommunityAdmin(currentUserId, community.id);
   }
-
+  console.log("---------------------------------" + image);
 
   return (
     <article
@@ -89,12 +91,22 @@ async function ThreadCard({
             <div className='thread-card_bar' />
           </div>
 
-          <div className='flex w-full flex-col'>
+          <div className='flex w-full flex-col outline-2'>
             <Link href={`/profile/${author.id}`} className='w-fit'>
               <h4 className='cursor-pointer text-base-semibold text-light-1'>
                 {author.name}
               </h4>
             </Link>
+            
+            <div className="w-full  flex justify-start align-middle overflow-hidden">
+            <Image
+              src={image}
+              alt="image"
+              width={180}
+              height={180}
+              objectFit="cover"
+            />
+            </div>
 
             <p className='mt-2 text-small-regular text-light-2'>{content}</p>
 

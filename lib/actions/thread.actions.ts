@@ -8,6 +8,7 @@ import Community from '../models/community.model';
 import mongoose from 'mongoose';
 
 interface Params {
+    image: string;
     text: string,
     author: string,
     communityId: string | null,
@@ -16,7 +17,7 @@ interface Params {
 
 
 // create thread
-export async function createThread({ text, author, communityId, path }: Params) {
+export async function createThread({image, text, author, communityId, path }: Params) {
     connectToDB();
     try {
         const communityIdObject = await Community.findOne(
@@ -25,6 +26,7 @@ export async function createThread({ text, author, communityId, path }: Params) 
             ).exec();
 
         const createdThread = await Thread.create({
+            image,
             text,
             author,
             community: communityIdObject?._id,
@@ -49,11 +51,12 @@ export async function createThread({ text, author, communityId, path }: Params) 
     }
 }
 
-export async function updateThread({ threadId, updatedText, path }: {
-    threadId: string, updatedText: string, path: string}){
+export async function updateThread({ threadId, updatedImage, updatedText, path }: {
+    threadId: string, updatedImage: string, updatedText: string, path: string}){
       connectToDB();
       try {
         const thread = await Thread.findById(threadId);
+        thread.image = updatedImage;
         thread.text = updatedText;
         await thread.save();
         revalidatePath(path);
@@ -137,8 +140,9 @@ export async function fetchThreadById(id: string) {
 }
 
 // add comment to thread
-export async function addCommentToThread({ threadId, commentText, userId, pathname }:  {
+export async function addCommentToThread({ threadId, commentImage, commentText, userId, pathname }:  {
     threadId: string,
+    commentImage: string,
     commentText: string,
     userId: string,
     pathname: string
@@ -154,6 +158,7 @@ export async function addCommentToThread({ threadId, commentText, userId, pathna
       }
       // Create the new comment thread
       const commentThread = new Thread({
+        image: commentImage,
         text: commentText,
         author: userId,
         parentId: threadId, // Set the parentId to the original thread's ID

@@ -19,7 +19,10 @@ const page = async ({ params } : { params : { id: string }}) => {
   if(!(userInfo?.status === 'active')) redirect('/activate-account');
   
   const thread = await fetchThreadById(params.id);
-  const isMemberOfCommunity = await isMember(user.id, thread.community.id);
+  console.log("---00000000000000000000000*****************------------------------------" + thread.image);
+  let isMemberOfCommunity = null;
+  if(thread.community != null)
+    isMemberOfCommunity = await isMember(user.id, thread.community.id);
   if (!(thread.author.etat === 'unbanned' && thread.author.status === 'active' && (thread.community == null || thread.community !== null && isMemberOfCommunity))) redirect('/'); 
 
   return (
@@ -29,6 +32,7 @@ const page = async ({ params } : { params : { id: string }}) => {
           id={thread._id}
           currentUserId={user.id}
           parentId={thread.parentId}
+          image={thread.image}
           content={thread.text}
           author={thread.author}
           community={thread.community}
@@ -52,6 +56,7 @@ const page = async ({ params } : { params : { id: string }}) => {
             id={childItem._id}
             currentUserId={user.id}
             parentId={childItem.parentId}
+            image={childItem.image}
             content={childItem.text}
             author={childItem.author}
             community={childItem.community}
